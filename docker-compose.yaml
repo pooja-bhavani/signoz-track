@@ -4,7 +4,7 @@ services:
       context: .
       dockerfile: services/gateway/Dockerfile
     ports:
-      - "8000:8000"
+      - "8005:8000"
     environment:
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
       - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
