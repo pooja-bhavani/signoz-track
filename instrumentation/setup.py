@@ -13,7 +13,7 @@ import logging
 
 from opentelemetry import trace, metrics
 from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import BatchSpanExporter
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.sdk.metrics import MeterProvider
 from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
 from opentelemetry.sdk.resources import Resource
@@ -42,7 +42,7 @@ def init_telemetry(service_name: str, service_version: str = "1.0.0") -> None:
     tracer_provider = TracerProvider(resource=resource)
     tracer_provider.add_span_processor(BusinessContextSpanProcessor())
     tracer_provider.add_span_processor(
-        BatchSpanExporter(OTLPSpanExporter(endpoint=f"{endpoint}/v1/traces"))
+        BatchSpanProcessor(OTLPSpanExporter(endpoint=f"{endpoint}/v1/traces"))
     )
     trace.set_tracer_provider(tracer_provider)
 
