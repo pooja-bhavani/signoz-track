@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   api-gateway:
     build:
@@ -59,9 +57,5 @@ services:
     command: ["--config=/etc/otel-collector-config.yaml"]
     volumes:
       - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
-    ports:
-      - "4317:4317"   # gRPC
-      - "4318:4318"   # HTTP
-      - "8888:8888"   # Prometheus metrics (collector self-observability)
     environment:
       - SIGNOZ_ENDPOINT=${SIGNOZ_ENDPOINT:-http://host.docker.internal:4318}
