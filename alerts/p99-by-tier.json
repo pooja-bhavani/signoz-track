@@ -1,0 +1,55 @@
+{
+  "alert": "P99 Latency SLA Breach - Enterprise Tier",
+  "alertType": "TRACES_BASED_ALERT",
+  "ruleType": "threshold_rule",
+  "condition": {
+    "compositeQuery": {
+      "queryType": "builder",
+      "builder": {
+        "queryData": [{
+          "dataSource": "traces",
+          "queryName": "A",
+          "aggregateOperator": "p99",
+          "aggregateAttribute": {
+            "key": "duration",
+            "type": "tag",
+            "dataType": "float64"
+          },
+          "filters": {
+            "items": [
+              {
+                "key": {"key": "tenant.tier", "type": "tag", "dataType": "string"},
+                "op": "=",
+                "value": "enterprise"
+              },
+              {
+                "key": {"key": "serviceName", "type": "tag", "dataType": "string"},
+                "op": "=",
+                "value": "payment-service"
+              }
+            ]
+          },
+          "expression": "A"
+        }]
+      }
+    },
+    "op": ">",
+    "target": 2000000000,
+    "matchType": "4",
+    "alertOnAbsent": false
+  },
+  "labels": {
+    "severity": "critical",
+    "team": "payments",
+    "tier": "enterprise",
+    "category": "latency"
+  },
+  "annotations": {
+    "summary": "Enterprise tier P99 latency exceeds 2000ms SLA (current: {{value}}ns)",
+    "description": "The payment service P99 latency for enterprise tier has exceeded the 2-second SLA threshold. Enterprise tenants expect sub-2s response times.",
+    "runbook": "1. Check CPU/memory metrics on payment-service pods\n2. Look for correlation with fraud-detection latency (LLM calls)\n3. Check if specific tenants are causing hot-path congestion\n4. Consider scaling payment-service replicas"
+  },
+  "evalWindow": "5m0s",
+  "frequency": "1m0s",
+  "broadcastToAll": false
+}

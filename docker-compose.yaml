@@ -1,0 +1,67 @@
+version: "3.9"
+
+services:
+  api-gateway:
+    build:
+      context: .
+      dockerfile: services/gateway/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
+      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      - DEPLOYMENT_ENV=production
+    depends_on:
+      - otel-collector
+      - payment-service
+
+  payment-service:
+    build:
+      context: .
+      dockerfile: services/payment/Dockerfile
+    ports:
+      - "8001:8001"
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
+      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      - DEPLOYMENT_ENV=production
+    depends_on:
+      - otel-collector
+      - fraud-detection
+
+  fraud-detection:
+    build:
+      context: .
+      dockerfile: services/fraud/Dockerfile
+    ports:
+      - "8002:8002"
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
+      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      - USE_REAL_LLM=${USE_REAL_LLM:-false}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - DEPLOYMENT_ENV=production
+    depends_on:
+      - otel-collector
+
+  load-generator:
+    build:
+      context: .
+      dockerfile: load-generator/Dockerfile
+    environment:
+      - GATEWAY_URL=http://api-gateway:8000
+      - REQUESTS_PER_SECOND=${RPS:-5}
+    depends_on:
+      - api-gateway
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.104.0
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    ports:
+      - "4317:4317"   # gRPC
+      - "4318:4318"   # HTTP
+      - "8888:8888"   # Prometheus metrics (collector self-observability)
+    environment:
+      - SIGNOZ_ENDPOINT=${SIGNOZ_ENDPOINT:-http://host.docker.internal:4318}

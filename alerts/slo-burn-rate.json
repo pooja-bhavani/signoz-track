@@ -1,0 +1,41 @@
+{
+  "alert": "SLO Error Budget Burn Rate Critical",
+  "alertType": "METRIC_BASED_ALERT",
+  "ruleType": "threshold_rule",
+  "condition": {
+    "compositeQuery": {
+      "queryType": "builder",
+      "builder": {
+        "queryData": [{
+          "dataSource": "metrics",
+          "queryName": "A",
+          "aggregateOperator": "avg",
+          "aggregateAttribute": {
+            "key": "slo_burn_rate",
+            "type": "gauge",
+            "dataType": "float64"
+          },
+          "groupBy": [{"key": "tier", "type": "tag", "dataType": "string"}],
+          "expression": "A"
+        }]
+      }
+    },
+    "op": ">",
+    "target": 1.0,
+    "matchType": "4",
+    "alertOnAbsent": false
+  },
+  "labels": {
+    "severity": "critical",
+    "team": "payments",
+    "category": "slo"
+  },
+  "annotations": {
+    "summary": "SLO error budget for tier {{tier}} is being consumed faster than allowed (burn rate: {{value}})",
+    "description": "The error budget burn rate has exceeded 1.0, meaning errors are occurring faster than the SLO allows. If this continues, the error budget will be exhausted before the window ends.",
+    "runbook": "1. Check the Cross-Signal RCA dashboard for correlated signals\n2. Identify the failing operation from error spans\n3. Check if the issue is isolated to a specific tenant\n4. Review recent deployments for regressions"
+  },
+  "evalWindow": "5m0s",
+  "frequency": "1m0s",
+  "broadcastToAll": false
+}

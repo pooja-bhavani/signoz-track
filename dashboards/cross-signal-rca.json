@@ -1,0 +1,181 @@
+{
+  "title": "Cross-Signal Root Cause Analysis",
+  "description": "Correlates P99 latency with error logs and CPU metrics in a single view for root cause investigation",
+  "tags": ["rca", "cross-signal", "hackathon"],
+  "layout": [
+    {"i": "widget-1", "x": 0, "y": 0, "w": 12, "h": 3},
+    {"i": "widget-2", "x": 0, "y": 3, "w": 6, "h": 3},
+    {"i": "widget-3", "x": 6, "y": 3, "w": 6, "h": 3},
+    {"i": "widget-4", "x": 0, "y": 6, "w": 12, "h": 3},
+    {"i": "widget-5", "x": 0, "y": 9, "w": 6, "h": 3},
+    {"i": "widget-6", "x": 6, "y": 9, "w": 6, "h": 3}
+  ],
+  "widgets": [
+    {
+      "id": "widget-1",
+      "title": "P99 Latency by Service (traces)",
+      "description": "Top panel: track latency spikes to identify which service is degrading",
+      "panelTypes": "graph",
+      "query": {
+        "queryType": "builder",
+        "builder": {
+          "queryData": [{
+            "dataSource": "traces",
+            "queryName": "A",
+            "aggregateOperator": "p99",
+            "aggregateAttribute": {
+              "key": "duration",
+              "type": "tag",
+              "dataType": "float64"
+            },
+            "groupBy": [{
+              "key": "serviceName",
+              "type": "tag",
+              "dataType": "string"
+            }],
+            "expression": "A",
+            "legend": "{{serviceName}}"
+          }]
+        }
+      }
+    },
+    {
+      "id": "widget-2",
+      "title": "Error Log Count by Service (logs)",
+      "description": "Correlates with latency — error logs spike before or during latency increases",
+      "panelTypes": "graph",
+      "query": {
+        "queryType": "builder",
+        "builder": {
+          "queryData": [{
+            "dataSource": "logs",
+            "queryName": "A",
+            "aggregateOperator": "count",
+            "filters": {
+              "items": [{
+                "key": {"key": "severity_text", "type": "tag", "dataType": "string"},
+                "op": "=",
+                "value": "ERROR"
+              }]
+            },
+            "groupBy": [{
+              "key": "service.name",
+              "type": "resource",
+              "dataType": "string"
+            }],
+            "expression": "A",
+            "legend": "{{service.name}}"
+          }]
+        }
+      }
+    },
+    {
+      "id": "widget-3",
+      "title": "CPU Utilization (metrics)",
+      "description": "Infrastructure signal — CPU saturation causes latency spikes",
+      "panelTypes": "graph",
+      "query": {
+        "queryType": "builder",
+        "builder": {
+          "queryData": [{
+            "dataSource": "metrics",
+            "queryName": "A",
+            "aggregateOperator": "avg",
+            "aggregateAttribute": {
+              "key": "system_cpu_utilization",
+              "type": "gauge",
+              "dataType": "float64"
+            },
+            "groupBy": [{
+              "key": "state",
+              "type": "tag",
+              "dataType": "string"
+            }],
+            "expression": "A",
+            "legend": "CPU {{state}}"
+          }]
+        }
+      }
+    },
+    {
+      "id": "widget-4",
+      "title": "Error Spans by Tenant Tier + Operation",
+      "description": "Business context: which tier and operation is most impacted",
+      "panelTypes": "graph",
+      "query": {
+        "queryType": "builder",
+        "builder": {
+          "queryData": [{
+            "dataSource": "traces",
+            "queryName": "A",
+            "aggregateOperator": "count",
+            "filters": {
+              "items": [{
+                "key": {"key": "hasError", "type": "tag", "dataType": "bool"},
+                "op": "=",
+                "value": "true"
+              }]
+            },
+            "groupBy": [
+              {"key": "tenant.tier", "type": "tag", "dataType": "string"},
+              {"key": "name", "type": "tag", "dataType": "string"}
+            ],
+            "expression": "A",
+            "legend": "{{tenant.tier}} — {{name}}"
+          }]
+        }
+      }
+    },
+    {
+      "id": "widget-5",
+      "title": "Memory Utilization",
+      "panelTypes": "graph",
+      "query": {
+        "queryType": "builder",
+        "builder": {
+          "queryData": [{
+            "dataSource": "metrics",
+            "queryName": "A",
+            "aggregateOperator": "avg",
+            "aggregateAttribute": {
+              "key": "system_memory_utilization",
+              "type": "gauge",
+              "dataType": "float64"
+            },
+            "groupBy": [{
+              "key": "state",
+              "type": "tag",
+              "dataType": "string"
+            }],
+            "expression": "A",
+            "legend": "Memory {{state}}"
+          }]
+        }
+      }
+    },
+    {
+      "id": "widget-6",
+      "title": "Log Severity Distribution",
+      "description": "Overview of log levels — shift from INFO to WARN/ERROR indicates issues",
+      "panelTypes": "graph",
+      "query": {
+        "queryType": "builder",
+        "builder": {
+          "queryData": [{
+            "dataSource": "logs",
+            "queryName": "A",
+            "aggregateOperator": "count",
+            "groupBy": [{
+              "key": "severity_text",
+              "type": "tag",
+              "dataType": "string"
+            }],
+            "expression": "A",
+            "legend": "{{severity_text}}"
+          }]
+        }
+      }
+    }
+  ],
+  "variables": {}
+}

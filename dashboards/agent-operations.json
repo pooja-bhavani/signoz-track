@@ -1,0 +1,193 @@
+{
+  "title": "AI Agent & Fraud Detection Operations",
+  "description": "LLM performance, fraud detection confidence, cost tracking, and AI agent investigation traces",
+  "tags": ["ai", "llm", "fraud", "hackathon"],
+  "layout": [
+    {"i": "widget-1", "x": 0, "y": 0, "w": 4, "h": 2},
+    {"i": "widget-2", "x": 4, "y": 0, "w": 4, "h": 2},
+    {"i": "widget-3", "x": 8, "y": 0, "w": 4, "h": 2},
+    {"i": "widget-4", "x": 0, "y": 2, "w": 6, "h": 3},
+    {"i": "widget-5", "x": 6, "y": 2, "w": 6, "h": 3},
+    {"i": "widget-6", "x": 0, "y": 5, "w": 12, "h": 3}
+  ],
+  "widgets": [
+    {
+      "id": "widget-1",
+      "title": "Avg Fraud Confidence Score",
+      "panelTypes": "value",
+      "query": {
+        "queryType": "builder",
+        "builder": {
+          "queryData": [{
+            "dataSource": "traces",
+            "queryName": "A",
+            "aggregateOperator": "avg",
+            "aggregateAttribute": {
+              "key": "fraud.confidence",
+              "type": "tag",
+              "dataType": "float64"
+            },
+            "filters": {
+              "items": [{
+                "key": {"key": "name", "type": "tag", "dataType": "string"},
+                "op": "=",
+                "value": "fraud.decision"
+              }]
+            },
+            "expression": "A"
+          }]
+        }
+      }
+    },
+    {
+      "id": "widget-2",
+      "title": "Total LLM Cost (1h)",
+      "panelTypes": "value",
+      "query": {
+        "queryType": "builder",
+        "builder": {
+          "queryData": [{
+            "dataSource": "metrics",
+            "queryName": "A",
+            "aggregateOperator": "sum",
+            "aggregateAttribute": {
+              "key": "fraud_llm_cost",
+              "type": "sum",
+              "dataType": "float64"
+            },
+            "expression": "A"
+          }]
+        }
+      }
+    },
+    {
+      "id": "widget-3",
+      "title": "High Risk Transactions (1h)",
+      "panelTypes": "value",
+      "query": {
+        "queryType": "builder",
+        "builder": {
+          "queryData": [{
+            "dataSource": "traces",
+            "queryName": "A",
+            "aggregateOperator": "count",
+            "filters": {
+              "items": [
+                {
+                  "key": {"key": "name", "type": "tag", "dataType": "string"},
+                  "op": "=",
+                  "value": "fraud.decision"
+                },
+                {
+                  "key": {"key": "fraud.risk_score", "type": "tag", "dataType": "float64"},
+                  "op": ">",
+                  "value": "0.7"
+                }
+              ]
+            },
+            "expression": "A"
+          }]
+        }
+      }
+    },
+    {
+      "id": "widget-4",
+      "title": "LLM Latency (P50 / P95 / P99)",
+      "panelTypes": "graph",
+      "query": {
+        "queryType": "builder",
+        "builder": {
+          "queryData": [
+            {
+              "dataSource": "traces",
+              "queryName": "A",
+              "aggregateOperator": "p50",
+              "aggregateAttribute": {"key": "duration", "type": "tag", "dataType": "float64"},
+              "filters": {"items": [{"key": {"key": "name", "type": "tag", "dataType": "string"}, "op": "=", "value": "fraud.llm_call"}]},
+              "expression": "A",
+              "legend": "P50"
+            },
+            {
+              "dataSource": "traces",
+              "queryName": "B",
+              "aggregateOperator": "p95",
+              "aggregateAttribute": {"key": "duration", "type": "tag", "dataType": "float64"},
+              "filters": {"items": [{"key": {"key": "name", "type": "tag", "dataType": "string"}, "op": "=", "value": "fraud.llm_call"}]},
+              "expression": "B",
+              "legend": "P95"
+            },
+            {
+              "dataSource": "traces",
+              "queryName": "C",
+              "aggregateOperator": "p99",
+              "aggregateAttribute": {"key": "duration", "type": "tag", "dataType": "float64"},
+              "filters": {"items": [{"key": {"key": "name", "type": "tag", "dataType": "string"}, "op": "=", "value": "fraud.llm_call"}]},
+              "expression": "C",
+              "legend": "P99"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "widget-5",
+      "title": "Token Usage (Input vs Output)",
+      "panelTypes": "graph",
+      "query": {
+        "queryType": "builder",
+        "builder": {
+          "queryData": [
+            {
+              "dataSource": "metrics",
+              "queryName": "A",
+              "aggregateOperator": "rate",
+              "aggregateAttribute": {"key": "fraud_llm_tokens", "type": "sum", "dataType": "float64"},
+              "filters": {"items": [{"key": {"key": "type", "type": "tag", "dataType": "string"}, "op": "=", "value": "input"}]},
+              "expression": "A",
+              "legend": "Input Tokens/s"
+            },
+            {
+              "dataSource": "metrics",
+              "queryName": "B",
+              "aggregateOperator": "rate",
+              "aggregateAttribute": {"key": "fraud_llm_tokens", "type": "sum", "dataType": "float64"},
+              "filters": {"items": [{"key": {"key": "type", "type": "tag", "dataType": "string"}, "op": "=", "value": "output"}]},
+              "expression": "B",
+              "legend": "Output Tokens/s"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "widget-6",
+      "title": "Fraud Confidence Distribution Over Time",
+      "panelTypes": "graph",
+      "query": {
+        "queryType": "builder",
+        "builder": {
+          "queryData": [{
+            "dataSource": "traces",
+            "queryName": "A",
+            "aggregateOperator": "avg",
+            "aggregateAttribute": {
+              "key": "fraud.confidence",
+              "type": "tag",
+              "dataType": "float64"
+            },
+            "filters": {
+              "items": [{
+                "key": {"key": "name", "type": "tag", "dataType": "string"},
+                "op": "=",
+                "value": "fraud.decision"
+              }]
+            },
+            "expression": "A",
+            "legend": "Avg Confidence"
+          }]
+        }
+      }
+    }
+  ],
+  "variables": {}
+}

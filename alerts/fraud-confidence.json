@@ -1,0 +1,47 @@
+{
+  "alert": "Fraud Detection Confidence Degraded",
+  "alertType": "TRACES_BASED_ALERT",
+  "ruleType": "threshold_rule",
+  "condition": {
+    "compositeQuery": {
+      "queryType": "builder",
+      "builder": {
+        "queryData": [{
+          "dataSource": "traces",
+          "queryName": "A",
+          "aggregateOperator": "avg",
+          "aggregateAttribute": {
+            "key": "fraud.confidence",
+            "type": "tag",
+            "dataType": "float64"
+          },
+          "filters": {
+            "items": [{
+              "key": {"key": "name", "type": "tag", "dataType": "string"},
+              "op": "=",
+              "value": "fraud.decision"
+            }]
+          },
+          "expression": "A"
+        }]
+      }
+    },
+    "op": "<",
+    "target": 0.7,
+    "matchType": "4",
+    "alertOnAbsent": false
+  },
+  "labels": {
+    "severity": "warning",
+    "team": "ml-platform",
+    "category": "model-quality"
+  },
+  "annotations": {
+    "summary": "Fraud detection model confidence has dropped below 0.7 (current avg: {{value}})",
+    "description": "The LLM-based fraud detection system is producing low-confidence decisions. This may indicate model drift, unusual transaction patterns, or degraded LLM performance.",
+    "runbook": "1. Check if LLM provider has degraded performance (check latency panel)\n2. Review recent transaction patterns for anomalies\n3. Check token usage — are prompts being truncated?\n4. Consider switching to rule-based fallback if confidence stays low"
+  },
+  "evalWindow": "10m0s",
+  "frequency": "2m0s",
+  "broadcastToAll": false
+}

@@ -1,0 +1,210 @@
+{
+  "title": "SLO Compliance & Error Budget",
+  "description": "Per-tier SLO tracking with error budget burn rate and predictive alerting data",
+  "tags": ["slo", "error-budget", "hackathon"],
+  "layout": [
+    {"i": "widget-1", "x": 0, "y": 0, "w": 4, "h": 2},
+    {"i": "widget-2", "x": 4, "y": 0, "w": 4, "h": 2},
+    {"i": "widget-3", "x": 8, "y": 0, "w": 4, "h": 2},
+    {"i": "widget-4", "x": 0, "y": 2, "w": 12, "h": 3},
+    {"i": "widget-5", "x": 0, "y": 5, "w": 6, "h": 3},
+    {"i": "widget-6", "x": 6, "y": 5, "w": 6, "h": 3}
+  ],
+  "widgets": [
+    {
+      "id": "widget-1",
+      "title": "Enterprise Error Budget Remaining",
+      "panelTypes": "value",
+      "query": {
+        "queryType": "builder",
+        "builder": {
+          "queryData": [{
+            "dataSource": "metrics",
+            "queryName": "A",
+            "aggregateOperator": "latest",
+            "aggregateAttribute": {
+              "key": "slo_error_budget_remaining",
+              "type": "gauge",
+              "dataType": "float64"
+            },
+            "filters": {
+              "items": [{
+                "key": {"key": "tier", "type": "tag", "dataType": "string"},
+                "op": "=",
+                "value": "enterprise"
+              }]
+            },
+            "expression": "A"
+          }]
+        }
+      },
+      "thresholds": [
+        {"value": 50, "color": "green", "label": "Healthy"},
+        {"value": 20, "color": "orange", "label": "At Risk"},
+        {"value": 0, "color": "red", "label": "Exhausted"}
+      ]
+    },
+    {
+      "id": "widget-2",
+      "title": "Pro Error Budget Remaining",
+      "panelTypes": "value",
+      "query": {
+        "queryType": "builder",
+        "builder": {
+          "queryData": [{
+            "dataSource": "metrics",
+            "queryName": "A",
+            "aggregateOperator": "latest",
+            "aggregateAttribute": {
+              "key": "slo_error_budget_remaining",
+              "type": "gauge",
+              "dataType": "float64"
+            },
+            "filters": {
+              "items": [{
+                "key": {"key": "tier", "type": "tag", "dataType": "string"},
+                "op": "=",
+                "value": "pro"
+              }]
+            },
+            "expression": "A"
+          }]
+        }
+      },
+      "thresholds": [
+        {"value": 50, "color": "green", "label": "Healthy"},
+        {"value": 20, "color": "orange", "label": "At Risk"},
+        {"value": 0, "color": "red", "label": "Exhausted"}
+      ]
+    },
+    {
+      "id": "widget-3",
+      "title": "Free Tier Error Budget Remaining",
+      "panelTypes": "value",
+      "query": {
+        "queryType": "builder",
+        "builder": {
+          "queryData": [{
+            "dataSource": "metrics",
+            "queryName": "A",
+            "aggregateOperator": "latest",
+            "aggregateAttribute": {
+              "key": "slo_error_budget_remaining",
+              "type": "gauge",
+              "dataType": "float64"
+            },
+            "filters": {
+              "items": [{
+                "key": {"key": "tier", "type": "tag", "dataType": "string"},
+                "op": "=",
+                "value": "free"
+              }]
+            },
+            "expression": "A"
+          }]
+        }
+      },
+      "thresholds": [
+        {"value": 50, "color": "green", "label": "Healthy"},
+        {"value": 20, "color": "orange", "label": "At Risk"},
+        {"value": 0, "color": "red", "label": "Exhausted"}
+      ]
+    },
+    {
+      "id": "widget-4",
+      "title": "Burn Rate Over Time (all tiers)",
+      "description": "Burn rate > 1.0 means error budget is exhausting faster than allowed",
+      "panelTypes": "graph",
+      "query": {
+        "queryType": "builder",
+        "builder": {
+          "queryData": [{
+            "dataSource": "metrics",
+            "queryName": "A",
+            "aggregateOperator": "avg",
+            "aggregateAttribute": {
+              "key": "slo_burn_rate",
+              "type": "gauge",
+              "dataType": "float64"
+            },
+            "groupBy": [{
+              "key": "tier",
+              "type": "tag",
+              "dataType": "string"
+            }],
+            "expression": "A",
+            "legend": "{{tier}} burn rate"
+          }]
+        }
+      }
+    },
+    {
+      "id": "widget-5",
+      "title": "Success Rate by Tier",
+      "panelTypes": "graph",
+      "query": {
+        "queryType": "builder",
+        "builder": {
+          "queryData": [
+            {
+              "dataSource": "traces",
+              "queryName": "A",
+              "aggregateOperator": "count",
+              "filters": {
+                "items": [{
+                  "key": {"key": "hasError", "type": "tag", "dataType": "bool"},
+                  "op": "!=",
+                  "value": "true"
+                }]
+              },
+              "groupBy": [{"key": "tenant.tier", "type": "tag", "dataType": "string"}],
+              "expression": "A"
+            },
+            {
+              "dataSource": "traces",
+              "queryName": "B",
+              "aggregateOperator": "count",
+              "groupBy": [{"key": "tenant.tier", "type": "tag", "dataType": "string"}],
+              "expression": "B"
+            }
+          ],
+          "formulaData": [{
+            "expression": "A*100/B",
+            "queryName": "F1",
+            "legend": "{{tenant.tier}} success %"
+          }]
+        }
+      }
+    },
+    {
+      "id": "widget-6",
+      "title": "Error Count by Tier (sliding window)",
+      "panelTypes": "graph",
+      "query": {
+        "queryType": "builder",
+        "builder": {
+          "queryData": [{
+            "dataSource": "traces",
+            "queryName": "A",
+            "aggregateOperator": "count",
+            "filters": {
+              "items": [{
+                "key": {"key": "hasError", "type": "tag", "dataType": "bool"},
+                "op": "=",
+                "value": "true"
+              }]
+            },
+            "groupBy": [{
+              "key": "tenant.tier",
+              "type": "tag",
+              "dataType": "string"
+            }],
+            "expression": "A",
+            "legend": "{{tenant.tier}} errors"
+          }]
+        }
+      }
+    }
+  ],
+  "variables": {}
+}

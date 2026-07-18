@@ -1,0 +1,202 @@
+{
+  "title": "Business Context Overview",
+  "description": "Revenue, transactions, and tenant health with business context from custom OTel instrumentation",
+  "tags": ["business", "rca-dashboard", "hackathon"],
+  "layout": [
+    {"i": "widget-1", "x": 0, "y": 0, "w": 4, "h": 2},
+    {"i": "widget-2", "x": 4, "y": 0, "w": 4, "h": 2},
+    {"i": "widget-3", "x": 8, "y": 0, "w": 4, "h": 2},
+    {"i": "widget-4", "x": 0, "y": 2, "w": 6, "h": 3},
+    {"i": "widget-5", "x": 6, "y": 2, "w": 6, "h": 3},
+    {"i": "widget-6", "x": 0, "y": 5, "w": 12, "h": 3}
+  ],
+  "widgets": [
+    {
+      "id": "widget-1",
+      "title": "Total Revenue Processed (1h)",
+      "panelTypes": "value",
+      "query": {
+        "queryType": "builder",
+        "builder": {
+          "queryData": [{
+            "dataSource": "traces",
+            "queryName": "A",
+            "aggregateOperator": "sum",
+            "aggregateAttribute": {
+              "key": "transaction.value",
+              "type": "tag",
+              "dataType": "float64"
+            },
+            "filters": {
+              "items": [{
+                "key": {"key": "name", "type": "tag", "dataType": "string"},
+                "op": "=",
+                "value": "payment.charge"
+              }]
+            },
+            "expression": "A"
+          }]
+        }
+      }
+    },
+    {
+      "id": "widget-2",
+      "title": "Active Tenants (1h)",
+      "panelTypes": "value",
+      "query": {
+        "queryType": "builder",
+        "builder": {
+          "queryData": [{
+            "dataSource": "traces",
+            "queryName": "A",
+            "aggregateOperator": "count_distinct",
+            "aggregateAttribute": {
+              "key": "tenant.id",
+              "type": "tag",
+              "dataType": "string"
+            },
+            "expression": "A"
+          }]
+        }
+      }
+    },
+    {
+      "id": "widget-3",
+      "title": "Payment Error Rate",
+      "panelTypes": "value",
+      "query": {
+        "queryType": "builder",
+        "builder": {
+          "queryData": [
+            {
+              "dataSource": "traces",
+              "queryName": "A",
+              "aggregateOperator": "count",
+              "filters": {
+                "items": [{
+                  "key": {"key": "hasError", "type": "tag", "dataType": "bool"},
+                  "op": "=",
+                  "value": "true"
+                }]
+              },
+              "expression": "A"
+            },
+            {
+              "dataSource": "traces",
+              "queryName": "B",
+              "aggregateOperator": "count",
+              "expression": "B"
+            }
+          ],
+          "formulaData": [{
+            "expression": "A*100/B",
+            "queryName": "F1",
+            "legend": "Error Rate %"
+          }]
+        }
+      }
+    },
+    {
+      "id": "widget-4",
+      "title": "Transaction Volume by Tenant Tier",
+      "panelTypes": "graph",
+      "query": {
+        "queryType": "builder",
+        "builder": {
+          "queryData": [{
+            "dataSource": "traces",
+            "queryName": "A",
+            "aggregateOperator": "count",
+            "aggregateAttribute": {
+              "key": "name",
+              "type": "tag",
+              "dataType": "string"
+            },
+            "filters": {
+              "items": [{
+                "key": {"key": "name", "type": "tag", "dataType": "string"},
+                "op": "=",
+                "value": "payment.charge"
+              }]
+            },
+            "groupBy": [{
+              "key": "tenant.tier",
+              "type": "tag",
+              "dataType": "string"
+            }],
+            "expression": "A"
+          }]
+        }
+      }
+    },
+    {
+      "id": "widget-5",
+      "title": "Revenue by Tenant (Top 5)",
+      "panelTypes": "graph",
+      "query": {
+        "queryType": "builder",
+        "builder": {
+          "queryData": [{
+            "dataSource": "traces",
+            "queryName": "A",
+            "aggregateOperator": "sum",
+            "aggregateAttribute": {
+              "key": "transaction.value",
+              "type": "tag",
+              "dataType": "float64"
+            },
+            "filters": {
+              "items": [{
+                "key": {"key": "name", "type": "tag", "dataType": "string"},
+                "op": "=",
+                "value": "payment.charge"
+              }]
+            },
+            "groupBy": [{
+              "key": "tenant.id",
+              "type": "tag",
+              "dataType": "string"
+            }],
+            "orderBy": [{"columnName": "A", "order": "desc"}],
+            "limit": 5,
+            "expression": "A"
+          }]
+        }
+      }
+    },
+    {
+      "id": "widget-6",
+      "title": "Payment Latency P99 by Tier (ms)",
+      "panelTypes": "graph",
+      "query": {
+        "queryType": "builder",
+        "builder": {
+          "queryData": [{
+            "dataSource": "traces",
+            "queryName": "A",
+            "aggregateOperator": "p99",
+            "aggregateAttribute": {
+              "key": "duration",
+              "type": "tag",
+              "dataType": "float64"
+            },
+            "filters": {
+              "items": [{
+                "key": {"key": "serviceName", "type": "tag", "dataType": "string"},
+                "op": "=",
+                "value": "payment-service"
+              }]
+            },
+            "groupBy": [{
+              "key": "tenant.tier",
+              "type": "tag",
+              "dataType": "string"
+            }],
+            "expression": "A"
+          }]
+        }
+      }
+    }
+  ],
+  "variables": {}
+}

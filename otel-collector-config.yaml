@@ -1,0 +1,76 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+  # Host metrics for CPU/memory correlation in dashboards
+  hostmetrics:
+    collection_interval: 10s
+    scrapers:
+      cpu:
+      memory:
+      disk:
+      network:
+
+processors:
+  batch:
+    send_batch_size: 1000
+    timeout: 5s
+
+  # Add resource attributes for all telemetry
+  resource:
+    attributes:
+      - key: deployment.environment
+        value: production
+        action: upsert
+      - key: collector.version
+        value: "0.104.0"
+        action: upsert
+
+  # Transform processor for metric enrichment
+  transform:
+    metric_statements:
+      - context: datapoint
+        statements:
+          - set(attributes["collector.processed"], "true")
+
+  # Memory limiter to prevent OOM
+  memory_limiter:
+    check_interval: 5s
+    limit_mib: 512
+    spike_limit_mib: 128
+
+exporters:
+  otlphttp:
+    endpoint: ${env:SIGNOZ_ENDPOINT}
+    tls:
+      insecure: true
+
+  # Debug exporter for development
+  debug:
+    verbosity: basic
+
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+  zpages:
+    endpoint: 0.0.0.0:55679
+
+service:
+  extensions: [health_check, zpages]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, resource, batch]
+      exporters: [otlphttp]
+    metrics:
+      receivers: [otlp, hostmetrics]
+      processors: [memory_limiter, resource, transform, batch]
+      exporters: [otlphttp]
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, resource, batch]
+      exporters: [otlphttp]
